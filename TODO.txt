@@ -3,3 +3,5 @@ DATABASE
 
 LOGIN PROCESS FOR USERS
 - add hashing like above
+- figure out how to actually connect sql database to Go
+- write the login functions lol
