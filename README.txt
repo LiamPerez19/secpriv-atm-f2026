@@ -22,10 +22,5 @@ Fields:
 
 -- TODO -- 
 
-DATABASE 
-- need to replace the current 'pure' ID numbers with hashed versions
-
-LOGIN PROCESS FOR USERS
-- add hashing like above
-- figure out how to actually connect sql database to Go
-- write the login functions lol
+DATABASE / LOGIN
+- replace ID numbers stored in database with hashed versions / add hashing to ID input
