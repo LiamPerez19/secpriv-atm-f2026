@@ -12,6 +12,20 @@ Name of database is "atm" eg. "SELECT * FROM atm"
 
 db file is named users.db
 
+-- ADDED NOTE ON PREPARED STATEMENTS --
+
+Prepared statements are formatted like 
+
+cursor.execute("SELECT username FROM atm WHERE pin_number = ?", (id,))
+
+Comma is necessary for the code to recognize it as a list and not a statement 
+
+For multiple inputs, 
+
+cursor.execute("SELECT username FROM atm WHERE pin_number = ? AND dob = ?", (id,dob))
+
+No appending comma required
+
 Fields: 
 - pin_number (currently 8-character string filling in for 8-digit number, hashing to be added)
 - date_of_birth (10-char string of format "MM/DD/YYYY")

@@ -4,13 +4,13 @@ import login
 def main():
 
     #initialize connection and cursor
-    connection = sqlite3.connect("users.db")
+    connection = sqlite3.connect("users2.db")
     cursor = connection.cursor()
     print("Database connected successfully + cursor initialized successfully")
 
-    id = login.login_logic(cursor)
+    id = str(login.login_logic(cursor))
 
-    cursor.execute(f"SELECT username FROM atm WHERE pin_number = {id}")
+    cursor.execute("SELECT username FROM atm WHERE pin_number = ?", (id,))
     username = cursor.fetchone()[0]
     print(f"Welcome, user {username}")
 

@@ -1,4 +1,5 @@
 from time import sleep
+import hashlib
 
 def test(cursor):
         
@@ -38,7 +39,9 @@ def login_logic(cursor):
 
         #if they are, look up all entries in the database with that ID/DOB combination via prepared statement
         if valid:
-            cursor.execute("SELECT * FROM atm WHERE pin_number = ? AND date_of_birth = ?", (id, dob))
+            salted_id = dob + id
+            hashed_id = (hashlib.sha256(salted_id.encode())).hexdigest()
+            cursor.execute("SELECT * FROM atm WHERE pin_number = ?", (hashed_id,))
             rows = cursor.fetchall()
             i = 0
 
@@ -54,7 +57,4 @@ def login_logic(cursor):
         attempts += 1
         valid = True
 
-    return id
-
-def id_check(cursor):
-    return 1
+    return hashed_id
