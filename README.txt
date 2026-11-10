@@ -37,4 +37,5 @@ Fields:
 -- TODO -- 
 
 DATABASE / LOGIN
-- replace ID numbers stored in database with hashed versions / add hashing to ID input
+- Login logic should be completely done!
+- Database should be well-instantiated - let Liam know if you need to modify it
