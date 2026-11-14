@@ -3,7 +3,7 @@ import login
 import dashboard
 import withdraw
 import deposit
-# import transfer
+import transfer
 
 def main():
 
@@ -60,7 +60,7 @@ def main():
 
         # 5. Transfer Funds
         elif choice == "5":
-          #  transfer.transfer_money(cursor, id)
+            transfer.transfer_funds(cursor, id)
             connection.commit()
 
         # 6. Exit
