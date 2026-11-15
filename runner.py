@@ -5,6 +5,7 @@ import withdraw
 import deposit
 import transfer
 import admin
+import cash_handler
 
 def main():
 
@@ -16,10 +17,22 @@ def main():
     admin.init_admin_table(cursor)
     connection.commit()
 
+    cash_handler.setup_handler_table(cursor)
+    cash_handler.setup_cash_table(cursor)
+    connection.commit()
+
     print("\n" + "=" * 40)
     print("         WELCOME TO ATM SYSTEM")
     print("=" * 40)
     entry = input("Press Enter to begin ")
+
+    # Cash Handler login
+    if entry == "ATMCASH":
+        handler_id = cash_handler.cash_handler_login(cursor)
+        if handler_id:
+            cash_handler.cash_handler_menu(cursor, handler_id)
+        connection.close()
+        return 0
 
     # Hidden admin gateway: exits completely if admin authentication fails
     if admin.check_gateway_code(entry):

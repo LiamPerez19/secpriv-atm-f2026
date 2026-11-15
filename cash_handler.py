@@ -1,4 +1,51 @@
+import hashlib
+import hmac
 MAX_CASH = 10000
+
+def setup_handler_table(cursor):
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS cash_handlers (
+            handler_pin TEXT PRIMARY KEY,
+            date_of_birth TEXT NOT NULL,
+            handler_name TEXT NOT NULL
+        )
+    """)
+    cursor.execute("SELECT COUNT(*) FROM cash_handlers")
+    if cursor.fetchone()[0] == 0:
+        pin = "88776655"
+        dob = "01/01/2000"
+        hashed_pin = hashlib.sha256((dob + pin).encode()).hexdigest()
+
+        cursor.execute(
+            "INSERT INTO cash_handlers (handler_pin, date_of_birth, handler_name) VALUES (?, ?, ?)",
+            (hashed_pin, dob, "TestHandler")
+        )
+
+def cash_handler_login(cursor):
+    print("\n===== CASH HANDLER LOGIN =====")
+
+    pin = input("Enter Cash Handler 8-digit PIN: ").strip()
+    dob = input("Enter Date of Birth (MM/DD/YYYY): ").strip()
+
+    if not pin.isdigit() or len(pin) != 8 or len(dob) != 10 or dob[2] != "/" or dob[5] != "/":
+        print("Invalid PIN or DOB format.")
+        return None
+
+    hashed_pin = hashlib.sha256((dob + pin).encode()).hexdigest()
+
+    cursor.execute(
+        "SELECT handler_pin, handler_name FROM cash_handlers WHERE handler_pin = ? AND date_of_birth = ?",
+        (hashed_pin, dob)
+    )
+
+    result = cursor.fetchone()
+
+    if result and hmac.compare_digest(result[0], hashed_pin):
+        print(f"Welcome, Cash Handler {result[1]}")
+        return hashed_pin
+
+    print("Authentication failed.")
+    return None
 
 def setup_cash_table(cursor):
     cursor.execute("""
@@ -12,7 +59,15 @@ def setup_cash_table(cursor):
         [(20, 0), (10, 0), (5, 0)]
     )
 
-def cash_handler_menu(cursor):
+def cash_handler_menu(cursor, handler_id):
+    cursor.execute(
+        "SELECT handler_pin FROM cash_handlers WHERE handler_pin = ?",
+        (handler_id,)
+    )
+    result = cursor.fetchone()
+    if not result or not hmac.compare_digest(result[0], handler_id):
+        print("Access denied. Cash Handler login required.")
+        return
 
     while True:
         print("\n===== CASH HANDLER MENU =====")
