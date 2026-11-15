@@ -4,6 +4,7 @@ import dashboard
 import withdraw
 import deposit
 import transfer
+import admin
 
 def main():
 
@@ -11,6 +12,22 @@ def main():
     connection = sqlite3.connect("users2.db")
     cursor = connection.cursor()
     print("Database connected successfully + cursor initialized successfully")
+
+    admin.init_admin_table(cursor)
+    connection.commit()
+
+    print("\n" + "=" * 40)
+    print("         WELCOME TO ATM SYSTEM")
+    print("=" * 40)
+    entry = input("Press Enter to begin ")
+
+    # Hidden admin gateway: exits completely if admin authentication fails
+    if admin.check_gateway_code(entry):
+        admin_id = admin.admin_login(cursor)
+        if admin_id:
+            admin.admin_menu(cursor, connection, admin_id)
+        connection.close()
+        return 0
 
     id = str(login.login_logic(cursor))
 
