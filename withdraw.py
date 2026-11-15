@@ -1,4 +1,5 @@
 from datetime import date
+import cash_handler
 
 def withdraw_money(cursor, account_id):
 
@@ -110,7 +111,12 @@ def withdraw_money(cursor, account_id):
         print(f"The selected bills total ${selected_total:,.2f}, not ${amount:,.2f}.")
         print("Withdrawal cancelled. Please try again.")
         return
-
+    
+    # Check if the ATM has enough bills
+    if not cash_handler.check_cash_available(cursor, bills_20, bills_10, bills_5):
+        print("Withdrawal cancelled. ATM does not have enough cash.")
+        return
+    
     # Display the withdrawal summary
     print("\n===== WITHDRAWAL SUMMARY =====")
     print(f"Withdrawal amount: ${amount:,.2f}")
@@ -154,6 +160,11 @@ def withdraw_money(cursor, account_id):
             current_withdrawn_today + amount > current_daily_limit):
         print("The account balance or daily limit changed. Please try again.")
         return
+    
+    # Check ATM cash again before completing the withdrawal
+    if not cash_handler.check_cash_available(cursor, bills_20, bills_10, bills_5):
+        print("Withdrawal cancelled. ATM cash inventory has changed.")
+        return
 
     # Deduct the withdrawal amount from the account balance
     cursor.execute(
@@ -161,6 +172,9 @@ def withdraw_money(cursor, account_id):
         (amount, account_id)
     )
 
+    # Deduct the bills from ATM cash inventory
+    cash_handler.deduct_cash(cursor, bills_20, bills_10, bills_5)
+    
     # Save the withdrawal details in the transaction history
     cursor.execute(
         """INSERT INTO withdrawal_transactions
