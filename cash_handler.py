@@ -1,3 +1,4 @@
+from time import sleep
 import hashlib
 import hmac
 MAX_CASH = 10000
@@ -29,6 +30,7 @@ def cash_handler_login(cursor):
 
     if not pin.isdigit() or len(pin) != 8 or len(dob) != 10 or dob[2] != "/" or dob[5] != "/":
         print("Invalid PIN or DOB format.")
+        sleep(600)
         return None
 
     hashed_pin = hashlib.sha256((dob + pin).encode()).hexdigest()
@@ -45,6 +47,7 @@ def cash_handler_login(cursor):
         return hashed_pin
 
     print("Authentication failed.")
+    sleep(600)
     return None
 
 def setup_cash_table(cursor):

@@ -1,3 +1,4 @@
+from time import sleep
 import hashlib
 import hmac
 import sqlite3
@@ -53,6 +54,7 @@ def admin_login(cursor):
 
     if not pin.isdigit() or len(pin) != 8 or len(dob) != 10 or dob[2] != '/' or dob[5] != '/':
         print("Authentication failed. Exiting.")
+        sleep(600)
         return None
 
     hashed_id = hashlib.sha256((dob + pin).encode()).hexdigest()
@@ -67,6 +69,7 @@ def admin_login(cursor):
         return hashed_id
 
     print("Authentication failed. Exiting.")
+    sleep(600)
     return None
 
 
