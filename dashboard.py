@@ -4,7 +4,7 @@ def show_dashboard():
     print("             ATM SYSTEM")
     print("=" * 40)
     print("1. View Account Balance")
-    print("2. View Withdrawal & Transfer Limits")
+    print("2. View Withdrawal & Deposit Limits")
     print("3. Withdraw Funds")
     print("4. Deposit Funds")
     print("5. Transfer Funds")

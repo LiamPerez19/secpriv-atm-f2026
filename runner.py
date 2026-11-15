@@ -73,10 +73,16 @@ def main():
             )
             result = cursor.fetchone()
 
-            if result:
+            cursor.execute(
+                "SELECT deposit_limit FROM atm WHERE pin_number = ?",
+                (id,)
+            )
+            result2 = cursor.fetchone()
+
+            if result and result2:
                 print("\n===== ACCOUNT LIMITS =====")
                 print(f"Daily Withdrawal Limit: ${result[0]:,.2f}")
-                print("Daily Transfer Limit: Not configured yet")
+                print(f"Daily Deposit Limit: ${result2[0]:,.2f}")
 
         # 3. Withdraw Funds
         elif choice == "3":

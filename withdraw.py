@@ -40,6 +40,19 @@ def withdraw_money(cursor, account_id):
     )
     withdrawn_today = cursor.fetchone()[0]
 
+    # Grab how many bills are in the machine
+    billcount = []
+    for denom in [20,10,5]:
+        cursor.execute(
+            "SELECT quantity FROM atm_cash WHERE denomination = ?",
+            (denom,)
+        )
+        billcount.append(cursor.fetchone())
+    
+    twenties = billcount[0][0]
+    tens = billcount[1][0]
+    fives = billcount[2][0]
+
     # Calculate the remaining daily withdrawal limit
     remaining_limit = daily_limit - withdrawn_today
 
@@ -49,6 +62,7 @@ def withdraw_money(cursor, account_id):
     print(f"Daily withdrawal limit: ${daily_limit:,.2f}")
     print(f"Withdrawn today: ${withdrawn_today:,.2f}")
     print(f"Remaining daily limit: ${max(remaining_limit, 0):,.2f}")
+    print(f"Bills in machine: $20 - {twenties}, $10 - {tens}, $5 - {fives}")
 
     # Check if the daily withdrawal limit has been reached
     if remaining_limit <= 0:
