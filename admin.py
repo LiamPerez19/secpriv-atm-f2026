@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 import hashlib
 import hmac
 import sqlite3
@@ -43,6 +44,7 @@ def is_authorized_admin(cursor, admin_pin):
 
 
 def admin_login(cursor):
+    start_time = time()
     """Single-attempt admin login; immediately exits on any invalid input or failed match."""
     init_admin_table(cursor)
     print("\n" + "=" * 40)
@@ -52,10 +54,14 @@ def admin_login(cursor):
     pin = input("Enter Admin 8-digit PIN: ").strip()
     dob = input("Enter Admin Date of Birth (MM/DD/YYYY): ").strip()
 
+    if time() - start_time > 30:
+        return time()
+    start_time = time()
+
     if not pin.isdigit() or len(pin) != 8 or len(dob) != 10 or dob[2] != '/' or dob[5] != '/':
         print("Authentication failed. Exiting.")
         sleep(600)
-        return None
+        return time()
 
     hashed_id = hashlib.sha256((dob + pin).encode()).hexdigest()
     cursor.execute(
@@ -74,14 +80,18 @@ def admin_login(cursor):
 
 
 def lookup_customer(cursor):
+    start_time = time()
     """Prompts for a customer's PIN and DOB and returns their row from 'atm'."""
     pin = input("Enter customer 8-digit PIN: ").strip()
     dob = input("Enter customer Date of Birth (MM/DD/YYYY): ").strip()
 
+    if time() - start_time > 30:
+        return None
+
     if not pin.isdigit() or len(pin) != 8 or len(dob) != 10 or dob[2] != '/' or dob[5] != '/':
         print("Invalid PIN or DOB format.")
         return None
-
+    
     hashed_id = hashlib.sha256((dob + pin).encode()).hexdigest()
     cursor.execute(
         """SELECT pin_number, username, date_of_birth, balance, withdraw_limit, deposit_limit
@@ -96,10 +106,11 @@ def lookup_customer(cursor):
 
 
 def create_account(cursor, admin_pin):
+    start_time = time()
     """Creates a new customer account in 'atm'."""
     if not is_authorized_admin(cursor, admin_pin):
         print("ACCESS DENIED: Administrator privileges required.")
-        return
+        return time()
 
     print("\n===== CREATE NEW CUSTOMER ACCOUNT =====")
     username = input("Enter customer full name (max 30 chars): ").strip()
@@ -108,22 +119,25 @@ def create_account(cursor, admin_pin):
     balance_str = input("Enter starting balance ($): ").strip()
     w_limit_str = input("Enter daily withdrawal limit ($): ").strip()
     d_limit_str = input("Enter daily deposit limit ($): ").strip()
+    if time() - start_time > 30:
+        return time()
+    start_time = time()
 
     if not (1 <= len(username) <= 30):
         print("Invalid name. Must be 1 to 30 characters.")
-        return
+        return time()
     if len(dob) != 10 or dob[2] != '/' or dob[5] != '/':
         print("Invalid DOB format. Must be MM/DD/YYYY.")
-        return
+        return time()
     if not pin.isdigit() or len(pin) != 8:
         print("Invalid PIN. Must be 8 numeric digits.")
-        return
+        return time()
     if not balance_str.isdigit():
         print("Invalid balance. Must be a non-negative whole number.")
-        return
+        return time()
     if not (w_limit_str.isdigit() and d_limit_str.isdigit()):
         print("Invalid limits. Daily withdrawal and deposit limits must be non-negative whole numbers.")
-        return
+        return time()
 
     hashed_id = hashlib.sha256((dob + pin).encode()).hexdigest()
 
@@ -137,17 +151,19 @@ def create_account(cursor, admin_pin):
     except sqlite3.IntegrityError:
         print("Error: An account with this PIN and DOB combination already exists.")
 
+    return time()
+
 
 def view_customer_account(cursor, admin_pin):
     """Displays balance and limits for a specific customer account."""
     if not is_authorized_admin(cursor, admin_pin):
         print("ACCESS DENIED: Administrator privileges required.")
-        return
+        return time()
 
     print("\n===== VIEW CUSTOMER ACCOUNT STANDINGS =====")
     account = lookup_customer(cursor)
     if account is None:
-        return
+        return time()
 
     _, username, dob, balance, w_limit, d_limit = account
     print(f"\nAccount Holder:         {username}")
@@ -156,17 +172,20 @@ def view_customer_account(cursor, admin_pin):
     print(f"Daily Withdrawal Limit: ${w_limit:,.2f}")
     print(f"Daily Deposit Limit:    ${d_limit:,.2f}")
 
+    return time()
+
 
 def set_limits(cursor, admin_pin):
+    start_time = time()
     """Updates daily withdrawal and deposit limits for one specific customer."""
     if not is_authorized_admin(cursor, admin_pin):
         print("ACCESS DENIED: Administrator privileges required.")
-        return
+        return time()
 
     print("\n===== SET CUSTOMER DAILY LIMITS =====")
     account = lookup_customer(cursor)
     if account is None:
-        return
+        return time()
 
     hashed_id, username, _, _, curr_w, curr_d = account
     print(f"\nAccount: {username}")
@@ -175,10 +194,13 @@ def set_limits(cursor, admin_pin):
 
     w_limit = input("\nEnter new daily withdrawal limit ($): ").strip()
     d_limit = input("Enter new daily deposit limit ($): ").strip()
+    if time() - start_time > 30:
+        return time()
+    start_time = time()
 
     if not (w_limit.isdigit() and d_limit.isdigit()):
         print("Invalid input. Limits must be non-negative whole numbers.")
-        return
+        return time()
 
     cursor.execute(
         "UPDATE atm SET withdraw_limit = ?, deposit_limit = ? WHERE pin_number = ?",
@@ -186,12 +208,14 @@ def set_limits(cursor, admin_pin):
     )
     print(f"Updated limits for '{username}' -> Withdrawal: ${int(w_limit):,.2f}, Deposit: ${int(d_limit):,.2f}")
 
+    return time()
+
 
 def view_logs(cursor, admin_pin):
     """Displays all deposit and withdrawal logs."""
     if not is_authorized_admin(cursor, admin_pin):
         print("ACCESS DENIED: Administrator privileges required.")
-        return
+        return time()
 
     print("\n===== DEPOSIT LOGS =====")
     cursor.execute("SELECT * FROM deposit_transactions")
@@ -203,14 +227,22 @@ def view_logs(cursor, admin_pin):
     for row in cursor.fetchall():
         print(row)
 
+    return time()
+
 
 def admin_menu(cursor, connection, admin_pin):
+    start_time = time()
+    end_time = time()
     """Protected CLI menu for authenticated administrators."""
     if not is_authorized_admin(cursor, admin_pin):
         print("ACCESS DENIED: Invalid or missing administrator session.")
         return
 
     while True:
+        if end_time - start_time > 30:
+            print("Timed out - terminating")
+            return None
+        start_time = end_time
         print("\n=== ADMINISTRATOR MENU ===")
         print("1. Create Customer Account")
         print("2. View Customer Account Standings")
@@ -218,17 +250,21 @@ def admin_menu(cursor, connection, admin_pin):
         print("4. View Deposit & Withdrawal Logs")
         print("5. Exit")
         choice = input("Select an option (1-5): ").strip()
+        if time() - start_time > 30:
+            print("Timed out - terminating")
+            return None
+        start_time = time()
 
         if choice == "1":
-            create_account(cursor, admin_pin)
+            end_time = create_account(cursor, admin_pin)
             connection.commit()
         elif choice == "2":
-            view_customer_account(cursor, admin_pin)
+            end_time = view_customer_account(cursor, admin_pin)
         elif choice == "3":
-            set_limits(cursor, admin_pin)
+            end_time = set_limits(cursor, admin_pin)
             connection.commit()
         elif choice == "4":
-            view_logs(cursor, admin_pin)
+            end_time = view_logs(cursor, admin_pin)
         elif choice == "5":
             print("Logging out of Administrator session.")
             break

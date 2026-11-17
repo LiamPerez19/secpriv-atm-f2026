@@ -1,4 +1,5 @@
 import sqlite3
+from time import time
 import login
 import dashboard
 import withdraw
@@ -9,6 +10,8 @@ import cash_handler
 
 def main():
 
+    start_time = time()
+    print(start_time)
     #initialize connection and cursor
     connection = sqlite3.connect("users2.db")
     cursor = connection.cursor()
@@ -25,6 +28,10 @@ def main():
     print("         WELCOME TO ATM SYSTEM")
     print("=" * 40)
     entry = input("Press Enter to begin ")
+    if time() - start_time > 10:
+        print("Session timed out - terminating")
+        return 0
+    start_time = time()
 
     # Cash Handler login
     if entry == "ATMCASH":
@@ -48,9 +55,18 @@ def main():
     username = cursor.fetchone()[0]
     print(f"Welcome, user {username}")
 
+    start_time = time()
+    end_time = start_time
     while True:
+        if end_time - start_time > 30:
+            print("Timed out - terminating")
+            break
         choice = dashboard.show_dashboard()
-        
+        end_time = time()
+        if end_time - start_time > 30:
+            print("Timed out - terminating")
+            break
+        start_time = end_time
 
         # 1. View Account Balance
         if choice == "1":
@@ -64,6 +80,8 @@ def main():
                 print(f"\nYour available account balance is: ${result[0]:,.2f}")
             else:
                 print("No account balance found.")
+
+            end_time = time()
 
         # 2. View Withdrawal & Transfer Limits
         elif choice == "2":
@@ -84,19 +102,21 @@ def main():
                 print(f"Daily Withdrawal Limit: ${result[0]:,.2f}")
                 print(f"Daily Deposit Limit: ${result2[0]:,.2f}")
 
+            end_time = time()
+
         # 3. Withdraw Funds
         elif choice == "3":
-            withdraw.withdraw_money(cursor, id)
+            end_time = withdraw.withdraw_money(cursor, id)
             connection.commit()
 
         # 4. Deposit Funds
         elif choice == "4":
-            deposit.deposit_money(cursor, id)
+            end_time = deposit.deposit_money(cursor, id)
             connection.commit()
 
         # 5. Transfer Funds
         elif choice == "5":
-            transfer.transfer_funds(cursor, id)
+            end_time = transfer.transfer_funds(cursor, id)
             connection.commit()
 
         # 6. Exit

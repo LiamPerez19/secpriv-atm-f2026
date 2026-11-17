@@ -1,4 +1,5 @@
 from datetime import date
+from time import time
 
 
 # Daily transfer limit per customer 
@@ -32,6 +33,8 @@ def transfer_funds(cursor, account_id):
     transferred_today = cursor.fetchone()[0]
     remaining_limit = DAILY_TRANSFER_LIMIT - transferred_today
 
+    start_time = time()
+
     # Display account information
     print("\n===== TRANSFER FUNDS =====")
     print(f"Available balance: ${balance:,.2f}")
@@ -42,40 +45,48 @@ def transfer_funds(cursor, account_id):
     # Check if the daily transfer limit has been reached
     if remaining_limit <= 0:
         print("You have reached your daily transfer limit.")
-        return
+        return time()
 
     # Find the receiver by username
     receiver_name = input("Enter the receiver's username: ").strip()
     cursor.execute("SELECT pin_number FROM atm WHERE username = ?", (receiver_name,))
     receiver = cursor.fetchone()
+    if time() - start_time > 30:
+        return time()
 
     if receiver is None:
         print("Receiver not found. Transfer cancelled.")
-        return
+        return time()
     if receiver[0] == account_id:
         print("You cannot transfer to your own account.")
-        return
+        return time()
 
     # Read and validate the amount
     try:
         amount = int(input("Enter transfer amount (whole dollars): $"))
     except ValueError:
         print("Invalid amount. Please enter a whole number.")
-        return
+        return time()
     if amount <= 0:
         print("Transfer amount must be greater than zero.")
-        return
+        return time()
     if amount > balance:
         print("Insufficient funds.")
-        return
+        return time()
     if amount > remaining_limit:
         print(f"Amount exceeds your remaining daily transfer limit of ${remaining_limit:,.2f}.")
-        return
+        return time()
+    
+    if time() - start_time > 30:
+        return time()
 
     # Confirm
     if input(f"Send ${amount:,.2f} to {receiver_name}? (Y/N): ").strip().upper() != "Y":
         print("Transfer cancelled.")
-        return
+        return time()
+
+    if time() - start_time > 30:
+        return time()
 
     # Update both accounts (runner.py commits)
     cursor.execute("UPDATE atm SET balance = balance - ? WHERE pin_number = ?", (amount, account_id))
@@ -88,3 +99,5 @@ def transfer_funds(cursor, account_id):
     )
 
     print(f"Transfer successful! Your new balance is: ${balance - amount:,.2f}")
+
+    return time()

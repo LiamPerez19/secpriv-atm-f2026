@@ -1,4 +1,5 @@
 from datetime import date
+from time import time
 import cash_handler
 
 def withdraw_money(cursor, account_id):
@@ -26,7 +27,7 @@ def withdraw_money(cursor, account_id):
     # Check if the account exists
     if account is None:
         print("Account not found. Withdrawal cancelled.")
-        return
+        return time()
 
     balance, daily_limit = account
     today = date.today().isoformat()
@@ -67,34 +68,39 @@ def withdraw_money(cursor, account_id):
     # Check if the daily withdrawal limit has been reached
     if remaining_limit <= 0:
         print("You have reached your daily withdrawal limit.")
-        return
+        return time()
+
+    start_time = time() 
 
     # Ask the customer to enter the withdrawal amount
     try:
         amount = int(input("\nEnter withdrawal amount (whole dollars): $"))
     except ValueError:
         print("Invalid amount. Please enter a whole number.")
-        return
+        return time()
 
     # Validate the withdrawal amount
     if amount <= 0:
         print("Withdrawal amount must be greater than zero.")
-        return
+        return time()
 
     # Ensure the amount is divisible by $5
     if amount % 5 != 0:
         print("Withdrawal amount must be a multiple of $5.")
-        return
+        return time()
 
     # Check if the customer has enough balance
     if amount > balance:
         print("Insufficient funds. Your balance is too low.")
-        return
+        return time()
 
     # Check if the amount exceeds the remaining daily limit
     if amount > remaining_limit:
         print(f"Amount exceeds your remaining daily limit of ${remaining_limit:,.2f}.")
-        return
+        return time()
+
+    if time() - start_time > 30:
+        return time()
 
     # Ask the customer to select bill denominations
     print("\nSelect your bill denominations by entering the quantity of each:")
@@ -106,12 +112,15 @@ def withdraw_money(cursor, account_id):
         bills_5 = int(input("Number of $5 bills: "))
     except ValueError:
         print("Invalid quantity. Please enter whole numbers only.")
-        return
+        return time()
+
+    if time() - start_time > 30:
+        return time()
 
     # Make sure bill quantities are not negative
     if min(bills_20, bills_10, bills_5) < 0:
         print("Bill quantities cannot be negative.")
-        return
+        return time()
 
     # Calculate the total value of the selected bills
     selected_total = (
@@ -124,12 +133,12 @@ def withdraw_money(cursor, account_id):
     if selected_total != amount:
         print(f"The selected bills total ${selected_total:,.2f}, not ${amount:,.2f}.")
         print("Withdrawal cancelled. Please try again.")
-        return
+        return time()
     
     # Check if the ATM has enough bills
     if not cash_handler.check_cash_available(cursor, bills_20, bills_10, bills_5):
         print("Withdrawal cancelled. ATM does not have enough cash.")
-        return
+        return time()
     
     # Display the withdrawal summary
     print("\n===== WITHDRAWAL SUMMARY =====")
@@ -142,10 +151,13 @@ def withdraw_money(cursor, account_id):
     # Ask the customer to confirm the withdrawal
     confirm = input("\nConfirm withdrawal? (Y/N): ").strip().upper()
 
+    if time() - start_time > 30:
+        return time()
+
     # Cancel the transaction if the customer does not confirm
     if confirm != "Y":
         print("Withdrawal cancelled. Your balance has not changed.")
-        return
+        return time()
 
     # Recheck the balance and daily limit before processing
     cursor.execute(
@@ -156,7 +168,7 @@ def withdraw_money(cursor, account_id):
 
     if current_account is None:
         print("Account not found. Withdrawal cancelled.")
-        return
+        return time()
 
     current_balance, current_daily_limit = current_account
 
@@ -173,12 +185,12 @@ def withdraw_money(cursor, account_id):
     if (amount > current_balance or
             current_withdrawn_today + amount > current_daily_limit):
         print("The account balance or daily limit changed. Please try again.")
-        return
+        return time()
     
     # Check ATM cash again before completing the withdrawal
     if not cash_handler.check_cash_available(cursor, bills_20, bills_10, bills_5):
         print("Withdrawal cancelled. ATM cash inventory has changed.")
-        return
+        return time()
 
     # Deduct the withdrawal amount from the account balance
     cursor.execute(
@@ -200,3 +212,5 @@ def withdraw_money(cursor, account_id):
     # Display the successful transaction message
     print("\nWithdrawal successful!")
     print(f"Your new balance is: ${current_balance - amount:,.2f}")
+
+    return time()

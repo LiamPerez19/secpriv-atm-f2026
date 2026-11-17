@@ -1,4 +1,5 @@
 from datetime import date
+from time import time
 
 def deposit_money(cursor, account_id):
 
@@ -22,7 +23,7 @@ def deposit_money(cursor, account_id):
     # Check if the account exists
     if account is None:
         print("Account not found. Deposit cancelled.")
-        return
+        return time()
 
     balance, daily_limit = account
     today = date.today().isoformat()
@@ -49,27 +50,32 @@ def deposit_money(cursor, account_id):
     # Check if the daily deposit limit has been reached
     if remaining_limit <= 0:
         print("You have reached your daily deposit limit.")
-        return
+        return time()
 
     # Ask the customer to enter the deposit amount
+    start_time = time() 
+
     try:
         amount_input = input("\nEnter deposit amount: $")
         amount = float(amount_input.replace(",", "").replace("$", ""))
 
         if not amount.is_integer():
             print("Please enter a whole dollar amount.")
-            return
+            return time()
 
         amount = int(amount)
 
     except ValueError:
         print("Invalid amount. Please enter a whole number.")
-        return
+        return time()
+
+    if time() - start_time > 30:
+        return time()
 
     # Validate the deposit amount
     if amount <= 0:
         print("Deposit amount must be greater than zero.")
-        return
+        return time()
 
     # Check if the amount exceeds the remaining daily limit
     if amount > remaining_limit:
@@ -77,7 +83,7 @@ def deposit_money(cursor, account_id):
             f"Amount exceeds your remaining daily deposit limit "
             f"of ${remaining_limit:,.2f}."
         )
-        return
+        return time()
 
     # Display the deposit summary
     print("\n===== DEPOSIT SUMMARY =====")
@@ -88,10 +94,13 @@ def deposit_money(cursor, account_id):
     # Ask the customer to confirm the deposit
     confirm = input("\nConfirm deposit? (Y/N): ").strip().upper()
 
+    if time() - start_time > 30:
+        return time()
+
     # Cancel the transaction if the customer does not confirm
     if confirm != "Y":
         print("Deposit cancelled. Your balance has not changed.")
-        return
+        return time()
 
     # Recheck the balance and daily deposit limit before processing
     cursor.execute(
@@ -102,7 +111,7 @@ def deposit_money(cursor, account_id):
 
     if current_account is None:
         print("Account not found. Deposit cancelled.")
-        return
+        return time()
 
     current_balance, current_daily_limit = current_account
 
@@ -118,7 +127,7 @@ def deposit_money(cursor, account_id):
     # Make sure the transaction is still within the daily limit
     if current_deposited_today + amount > current_daily_limit:
         print("The daily deposit limit has changed. Please try again.")
-        return
+        return time()
 
     # Add the deposit amount to the account balance
     cursor.execute(
@@ -137,3 +146,5 @@ def deposit_money(cursor, account_id):
     # Display the successful transaction message
     print("\nDeposit successful!")
     print(f"Your new balance is: ${current_balance + amount:,.2f}")
+
+    return time()

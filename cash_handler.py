@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 import hashlib
 import hmac
 MAX_CASH = 10000
@@ -72,7 +73,13 @@ def cash_handler_menu(cursor, handler_id):
         print("Access denied. Cash Handler login required.")
         return
 
+    start_time = time()
+    end_time = time()
     while True:
+        if end_time - start_time > 30:
+            print("Timed out - terminating")
+            return
+        start_time = end_time
         print("\n===== CASH HANDLER MENU =====")
         print("1. View Cash Inventory")
         print("2. Restock Cash")
@@ -80,15 +87,20 @@ def cash_handler_menu(cursor, handler_id):
         print("4. Logout")
 
         choice = input("Select an option: ")
+        if time() - start_time > 30:
+            print("Timed out - terminating")
+            return
+        start_time = time()
 
         if choice == "1":
             view_cash_inventory(cursor)
+            end_time = time()
 
         elif choice == "2":
-            restock_cash(cursor)
+            end_time = restock_cash(cursor)
 
         elif choice == "3":
-            remove_cash(cursor)
+            end_time = remove_cash(cursor)
 
         elif choice == "4":
             print("Logging out...")
@@ -111,6 +123,7 @@ def view_cash_inventory(cursor):
     print(f"Total cash: ${total:,.2f}")
 
 def restock_cash(cursor):
+    start_time = time()
     print("\n===== RESTOCK CASH =====")
 
     try:
@@ -119,15 +132,18 @@ def restock_cash(cursor):
         bills_5 = int(input("Number of $5 bills: "))
     except ValueError:
         print("Invalid input. Please enter whole numbers.")
-        return
+        return time()
+
+    if time() - start_time > 30:
+        return time()
 
     if min(bills_20, bills_10, bills_5) < 0:
         print("Bill quantities cannot be negative.")
-        return
+        return time()
 
     if bills_20 + bills_10 + bills_5 == 0:
         print("No cash added.")
-        return
+        return time()
 
     # Get the current cash total
     cursor.execute("SELECT denomination, quantity FROM atm_cash")
@@ -142,7 +158,7 @@ def restock_cash(cursor):
 
     if current_total + added_cash > MAX_CASH:
         print(f"Cash capacity exceeded. Maximum is ${MAX_CASH:,}.")
-        return
+        return time()
 
     for denomination, quantity in [(20, bills_20), (10, bills_10), (5, bills_5)]:
         cursor.execute(
@@ -153,24 +169,30 @@ def restock_cash(cursor):
     cursor.connection.commit()
     print("Cash restocked successfully!")
 
+    return time()
+
 def remove_cash(cursor):
     print("\n===== REMOVE CASH =====")
 
+    start_time = time()
     try:
         bills_20 = int(input("Number of $20 bills to remove: "))
         bills_10 = int(input("Number of $10 bills to remove: "))
         bills_5 = int(input("Number of $5 bills to remove: "))
     except ValueError:
         print("Invalid input. Please enter whole numbers.")
-        return
+        return time()
+
+    if time() - start_time > 30:
+        return time()
 
     if min(bills_20, bills_10, bills_5) < 0:
         print("Bill quantities cannot be negative.")
-        return
+        return time()
 
     if bills_20 + bills_10 + bills_5 == 0:
         print("No cash removed.")
-        return
+        return time()
 
     bills = [(20, bills_20), (10, bills_10), (5, bills_5)]
 
@@ -183,7 +205,7 @@ def remove_cash(cursor):
 
         if result is None or quantity > result[0]:
             print(f"Not enough ${denomination} bills available.")
-            return
+            return time()
 
     for denomination, quantity in bills:
         cursor.execute(
@@ -193,6 +215,8 @@ def remove_cash(cursor):
 
     cursor.connection.commit()
     print("Cash removed successfully!")
+
+    return time()
 
 def check_cash_available(cursor, bills_20, bills_10, bills_5):
     bills = [(20, bills_20), (10, bills_10), (5, bills_5)]
